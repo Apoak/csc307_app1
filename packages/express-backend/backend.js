@@ -6,9 +6,9 @@ const port = 8000;
 
 app.use(express.json());
 
-// app.get("/", (req, res) => {
-//   res.send("Hello World!");
-// });
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 app.listen(port, () => {
   console.log(
@@ -61,7 +61,7 @@ const findUserByName = (name) => {
 };
 
 app.get("/users", (req, res) => {
-  const name = req.query.name;
+ const name = req.query.name;
   if (name != undefined) {
     let result = findUserByName(name);
     result = { users_list: result };
@@ -94,3 +94,34 @@ app.post("/users", (req, res) => {
   addUser(userToAdd);
   res.send();
 });
+
+const findUserIndexById = (userId) => {
+  return users["users_list"].findIndex(
+    (user) => user["id"] === userId
+  );
+};
+
+app.delete("/users", (req, res) => {
+  const userId = req.params.userId;
+  const index = findUserIndexById(userId);
+
+ if (index !== -1) {
+    users["users_list"].splice(index, 1);
+    res.json({ message: `User with ID ${userId} deleted successfully.` });
+  } else {
+    res.status(404).json({ error: `User with ID ${userId} not found.` });
+  }
+}
+)
+
+app.get("/users", (req, res) => {
+ const name = req.query.name;
+  if (name != undefined) {
+    let result = findUserByName(name);
+    result = { users_list: result };
+    res.send(result);
+  } else {
+    res.send(users);
+  }
+});
+
