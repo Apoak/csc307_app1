@@ -1,10 +1,14 @@
 // backend.js
 import express from "express";
+import cors from "cors";
+
 
 const app = express();
 const port = 8000;
 
+app.use(cors());
 app.use(express.json());
+
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -42,11 +46,6 @@ const users = {
       id: "zap555",
       name: "Dennis",
       job: "Bartender"
-    },
-    {
-      id: "aaa",
-      name: "Andrew",
-      job: "good guy"
     }
   ]
 };
@@ -57,6 +56,12 @@ app.get("/users", (req, res) => {
 const findUserByName = (name) => {
   return users["users_list"].filter(
     (user) => user["name"] === name
+  );
+};
+
+const findUserByNameJob = (name, job) => {
+  return users["users_list"].filter(
+    (user) => user["name"] === name && user["job"] === job
   );
 };
 
@@ -91,8 +96,10 @@ const addUser = (user) => {
 
 app.post("/users", (req, res) => {
   const userToAdd = req.body;
+  const idr = Math.random() * 100000000000000000;
+  userToAdd.id = String(idr);
   addUser(userToAdd);
-  res.send();
+  res.status(201).send({userToAdd});
 });
 
 const findUserIndexById = (userId) => {
@@ -101,14 +108,22 @@ const findUserIndexById = (userId) => {
   );
 };
 
-app.delete("/users", (req, res) => {
-  const userId = req.params.userId;
-  const index = findUserIndexById(userId);
+const deleteUser = (idx) =>{
+  if (idx !== -1) {
+    const deleted = users["users_list"].splice(idx, 1)[0];
+    return {Terminated: true, deleted};
+}
+console.log("User not found");
+  return { success: false };}
 
- if (index !== -1) {
-    users["users_list"].splice(index, 1);
-    res.json({ message: `User with ID ${userId} deleted successfully.` });
-  } else {
+app.delete("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const Result = deleteUser(userId);
+  //const index = findUserById(userId);
+  if(Result.Terminated){
+    res.status(200).send({ message: `User with ID ${userId} deleted successfully.` });
+  }
+  else {
     res.status(404).json({ error: `User with ID ${userId} not found.` });
   }
 }
@@ -116,12 +131,13 @@ app.delete("/users", (req, res) => {
 
 app.get("/users", (req, res) => {
  const name = req.query.name;
+ const job = req.query.job;
   if (name != undefined) {
-    let result = findUserByName(name);
-    result = { users_list: result };
-    res.send(result);
+    if (job != undefined){
+      const result = findUsersByNameAndJob(name, job);
+      res.json({ users_list: result });
+    }
   } else {
     res.send(users);
   }
 });
-
